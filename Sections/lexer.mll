@@ -45,3 +45,27 @@ let char = [\32 - \33 \35 - \91 \93 - \126]
 let string = '"' char* '"'
 
 (*Rules*)
+
+rule token = parse
+  |  [' ' '\t' '\n']+ { token lexbuf }
+  | "/*" { level := 1; comment lexbuf; token lexbuf }
+  | "//" [^ '\n']*   { token lexbuf } (* one line comment *)
+  | ident as id { id_or_kwd id }
+  | integer as s { CST (int_of_string s) }*) 
+  | '+'     { PLUS }
+  | '-'     { MINUS }
+  | '*'     { TIMES }
+  | '/'     { DIV }
+  | '('     { LPAREN }
+  | ')'     { RPAREN }
+  | '{'     { BEGIN }
+  | '}'     { END }
+  | ','     { COMMA }
+  | eof     { EOF }
+
+and comment = parse
+| "*/" { decr level; if !level > 0 then comment lexbuf }
+| "/*" { incr level; comment lexbuf }
+| _    { comment lexbuf }
+| eof  { failwith "unterminated comment" }
+
